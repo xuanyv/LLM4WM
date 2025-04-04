@@ -3,8 +3,6 @@ import torch
 import numpy as np
 import hdf5storage
 from numpy import random
-from metrics import Acc_k, dft_codebook
-
 
 def LoadBatch(H):
     # H: ...     [tensor complex]
@@ -33,8 +31,6 @@ def noise(H, SNR):
     add_noise = add_noise * np.sqrt(np.mean(np.abs(H) ** 2))
     return H + add_noise
 
-
-# SNR 5, 15, 20
 class Dataset(data.Dataset):
     def __init__(self, file_path, ir=1, SNR=25, is_few=0, SEED=42, is_show=1):
         super(Dataset, self).__init__()
@@ -120,193 +116,11 @@ class Dataset(data.Dataset):
     def __len__(self):
         return self.T1i.shape[0]
 
-    def Loc_quantization(self, x, Fine_grained=100):
-        assert len(x.shape) == 2
-        min_val = x.min(dim=0, keepdim=True)[0]
-        max_val = x.max(dim=0, keepdim=True)[0]
-        x_norm = (x - min_val) / (max_val - min_val)
-        output = torch.ceil(x_norm * Fine_grained) / Fine_grained
-        return output
 
 
 def topk_to_one(tensor, k):
-    # 获取每行最大的 k 个值的索引
     topk_indices = torch.topk(tensor, k, dim=1).indices
-    # 创建一个全零张量
     result = torch.zeros_like(tensor)
-    # 在 top-k 的位置上设置为 1
     result.scatter_(1, topk_indices, 1)
     return result
 
-
-def topk_to_one_trainable(tensor, k):
-    # 获取每行最大的 k 个值的索引
-    topk_indices = torch.topk(tensor, k, dim=1).indices
-    # 创建一个全零张量
-    result = torch.zeros_like(tensor) + 1e-6
-    # 在 top-k 的位置上设置为 1
-    result.scatter_(1, topk_indices, 1)
-    output = tensor * result  # + (1e-6) * (1 - result)
-    # output = result
-    return output
-
-
-def get_Relevance_mmW_sub6(dataset):
-    lens = len(dataset)
-    loss_func = Acc_k()
-    acc_1 = []
-    acc_4 = []
-    acc_16 = []
-    for iter in range(lens):
-        mmW = dataset[iter]["mmWave"].squeeze()
-        mmW_com = torch.complex(mmW[..., 0], mmW[..., 1])  # 64, 64
-        mmW_com = torch.abs(torch.fft.fft(mmW_com, dim=0))  # 64, 64
-        mmW_com = torch.sum(mmW_com, dim=1, keepdim=False)
-        mmW_com = mmW_com / torch.max(mmW_com)
-
-        beam_label = topk_to_one(mmW_com.unsqueeze(0), k=1)
-
-        sub6 = dataset[iter]["H_sub6"][15, ...].squeeze()
-        sub6_com = torch.complex(sub6[..., 0], sub6[..., 1])  # 64, 64
-        zeros = torch.zeros([mmW_com.shape[0] - sub6_com.shape[0], sub6_com.shape[1]])
-        # print(sub6_com.shape, zeros.shape)
-        sub6_com = torch.cat([sub6_com, zeros], dim=0)
-        sub6_com = torch.abs(torch.fft.fft(sub6_com, dim=0))  # 64, 64
-        sub6_com = torch.sum(sub6_com, dim=1, keepdim=False)
-        sub6_com = sub6_com / torch.max(sub6_com)
-
-        acc_1.append(loss_func(beam_label, topk_to_one(sub6_com.unsqueeze(0), k=1)))
-        acc_4.append(loss_func(beam_label, topk_to_one(sub6_com.unsqueeze(0), k=4)))
-        acc_16.append(loss_func(beam_label, topk_to_one(sub6_com.unsqueeze(0), k=16)))
-
-    print(np.nanmean(np.array(acc_1)))  # 0.5888877
-    print(np.nanmean(np.array(acc_4)))  # 0.5041072
-    print(np.nanmean(np.array(acc_16)))  # 0.3240955
-
-
-def get_Relevance_beamlabel_sub6(dataset):
-    lens = len(dataset)
-    loss_func = Acc_k()
-    acc_1 = []
-    acc_4 = []
-    acc_16 = []
-    for iter in range(lens):
-        # mmW = dataset[iter]["mmWave"].squeeze(-2)
-        # mmW_com = torch.complex(mmW[..., 0], mmW[..., 1])  # 64, 64
-        # mmW_com = torch.abs(torch.fft.fft(mmW_com, dim=1))  # 64, 64
-        # mmW_com = torch.sum(mmW_com, dim=0, keepdim=False)
-        # mmW_com = mmW_com / torch.max(mmW_com)
-        #
-        # beam_label = topk_to_one(mmW_com.unsqueeze(0), k=1)
-
-        beam_label = dataset[iter]["T2o2"].unsqueeze(0)
-        beam_label = topk_to_one(beam_label, k=1)
-
-        sub6 = dataset[iter]["sub6"].squeeze().permute(1, 0, 2)  # 64, 16, 2
-        # print(sub6.shape)
-        sub6_com = torch.complex(sub6[..., 0], sub6[..., 1]).to(torch.complex128)  # 64, 16
-        F_transformer2 = torch.tensor(dft_codebook(64, sub6_com.shape[1])).to(torch.complex128)
-        Y_p_angle2 = torch.sum(torch.abs(sub6_com @ F_transformer2).to(torch.float), dim=0,
-                               keepdim=False)  # B, n_p, Nt2
-
-        sub6_com = Y_p_angle2 / torch.max(Y_p_angle2)
-
-        acc1 = loss_func(beam_label, topk_to_one(sub6_com.unsqueeze(0), k=1))
-        acc4 = loss_func(beam_label, topk_to_one(sub6_com.unsqueeze(0), k=4))
-        acc16 = loss_func(beam_label, topk_to_one(sub6_com.unsqueeze(0), k=16))
-
-        # print(acc1, acc4, acc16)
-
-        acc_1.append(loss_func(beam_label, topk_to_one(sub6_com.unsqueeze(0), k=1)))
-        acc_4.append(loss_func(beam_label, topk_to_one(sub6_com.unsqueeze(0), k=4)))
-        acc_16.append(loss_func(beam_label, topk_to_one(sub6_com.unsqueeze(0), k=16)))
-
-    print(np.nanmean(np.array(acc_1)))  # 0.9786647
-    print(np.nanmean(np.array(acc_4)))  # 0.6398847
-    print(np.nanmean(np.array(acc_16)))  # 0.3844287
-
-
-def get_Relevance_beamlabel_sub6_2(dataset):
-    lens = len(dataset)
-    loss_func = Acc_k()
-    acc_1 = []
-    acc_4 = []
-    acc_16 = []
-    for iter in range(lens):
-        # mmW = dataset[iter]["mmWave"].squeeze(-2)
-        # mmW_com = torch.complex(mmW[..., 0], mmW[..., 1])  # 64, 64
-        # mmW_com = torch.abs(torch.fft.fft(mmW_com, dim=1))  # 64, 64
-        # mmW_com = torch.sum(mmW_com, dim=0, keepdim=False)
-        # mmW_com = mmW_com / torch.max(mmW_com)
-        #
-        # beam_label = topk_to_one(mmW_com.unsqueeze(0), k=1)
-
-        beam_label = dataset[iter]["T2o2"].unsqueeze(0)
-        beam_label = topk_to_one(beam_label, k=1)
-
-        sub6 = dataset[iter]["mmW"].squeeze().permute(1, 0, 2)  # 64, 16, 2
-        # print(sub6.shape)
-        sub6_com = torch.complex(sub6[..., 0], sub6[..., 1]).to(torch.complex128)  # 64, 16
-        F_transformer2 = torch.tensor(dft_codebook(64, sub6_com.shape[1])).to(torch.complex128)
-        Y_p_angle2 = torch.sum(torch.abs(sub6_com @ F_transformer2).to(torch.float), dim=0,
-                               keepdim=False)  # B, n_p, Nt2
-
-        sub6_com = Y_p_angle2 / torch.max(Y_p_angle2)
-
-        acc1 = loss_func(beam_label, topk_to_one(sub6_com.unsqueeze(0), k=1))
-        acc4 = loss_func(beam_label, topk_to_one(sub6_com.unsqueeze(0), k=4))
-        acc16 = loss_func(beam_label, topk_to_one(sub6_com.unsqueeze(0), k=16))
-
-        # print(acc1, acc4, acc16)
-
-        acc_1.append(loss_func(beam_label, topk_to_one(sub6_com.unsqueeze(0), k=1)))
-        acc_4.append(loss_func(beam_label, topk_to_one(sub6_com.unsqueeze(0), k=4)))
-        acc_16.append(loss_func(beam_label, topk_to_one(sub6_com.unsqueeze(0), k=16)))
-
-    print(np.nanmean(np.array(acc_1)))  # 0.9786647
-    print(np.nanmean(np.array(acc_4)))  # 0.6398847
-    print(np.nanmean(np.array(acc_16)))  # 0.3844287
-
-
-def test_codebook(dataset):
-    lens = len(dataset)
-    loss_func = Acc_k()
-    acc_1 = []
-    acc_2 = []
-
-    for iter in range(lens):
-        beam_label = dataset[iter]["T4o"].unsqueeze(0)
-
-        sub6 = dataset[iter]["T4i"].squeeze().permute(1, 0, 2)  # 8(K), 8(N), 2
-        # print(sub6.shape)
-        sub6_com = torch.complex(sub6[..., 0], sub6[..., 1]).to(torch.complex128)  # 64, 16
-        F_transformer2 = torch.tensor(dft_codebook(256, sub6_com.shape[1])).to(torch.complex128)
-        Y_p_angle2 = torch.sum(torch.abs(sub6_com @ F_transformer2).to(torch.float), dim=0,
-                               keepdim=False)  # B, n_p, Nt2
-
-        sub6_com = Y_p_angle2 / torch.max(Y_p_angle2)
-
-        acc1 = loss_func(topk_to_one(beam_label, k=1), topk_to_one(sub6_com.unsqueeze(0), k=1), topk=1)
-        acc2 = loss_func(topk_to_one(beam_label, k=2), topk_to_one(sub6_com.unsqueeze(0), k=2), topk=2)
-        ids = torch.argmax(beam_label, dim=1)
-        print(ids)
-        acc_1.append(acc1)
-        acc_2.append(acc2)
-
-    print(np.nanmean(np.array(acc_1)))  # 0.9786647
-    print(np.nanmean(np.array(acc_2)))  # 0.6398847
-
-
-if __name__ == '__main__':
-    batch_size = 32
-
-    path1 = '/data1/PCNI1_data/MTLLM_v2/MTLLM_1106/H_train/norm/Dataset_uma_0107.mat'
-    # 0.552
-    # 0.6625
-    data_set = Dataset(path1, SNR=10, is_train=0, test_per=0.1)
-    # 0.631
-    # 0.585
-    test_codebook(data_set)
-    # for key, value in data_set[0].items():
-    #     print(key, value.shape)
-    # print(data_set[0]["T1o"])

@@ -1,5 +1,6 @@
 """
-   final-version
+Author: liu xvanyv
+(final-version)
 """
 import os
 import numpy as np
@@ -16,7 +17,6 @@ import time
 os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'
 
 
-# 定义DFT码本生成函数
 def dft_codebook(num_beams, num_antennas):
     D = np.zeros((num_antennas, num_beams), dtype=complex)
     for i in range(num_beams):

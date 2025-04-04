@@ -35,11 +35,10 @@ class SE_Loss_mmWave(nn.Module):
         self.codebook = torch.tensor(dft_codebook(Num_codebook, 64), dtype=torch.complex128)  # 64, num_codebook
 
     def forward(self, h, beam_id):
-        # 模拟预编码, input tensor    beam_id([B])
         B, Nt, K = h.shape
         h = h.permute(0, 2, 1)
         beam_vetor = self.codebook[:, np.array(beam_id.cpu())].permute(1, 0).view(B, 1, -1).repeat(1, K, 1).to(h.device)  # B * K * Nt
-        # 计算频谱效率
+
         # 1. prepare data
         H_true = rearrange(h.unsqueeze(-1), 'b k m n -> (b k) m n').to(torch.complex128)  # B, K, Nt, Nr
         S_real = torch.diag(torch.ones(1, 1)).unsqueeze(0).repeat([B*K, 1, 1])  # b,1,1
@@ -64,11 +63,6 @@ class SE_Loss_mmWave(nn.Module):
         SE0 = -torch.log2(torch.det(torch.div(torch.pow(torch.abs(matmul2), 2), noise_var) + S))  # B
         SE0 = torch.mean(SE0.real)
 
-        # # 计算信道增益
-        # SE = torch.complex(beam_vetor.real * h.real - beam_vetor.imag * h.imag,
-        #                              beam_vetor.real * h.imag + beam_vetor.imag * h.real)  # B * K * Nt
-        # SE = torch.abs(torch.sum(SE, dim=2))  # B, K, 1
-        # SE = torch.mean(SE, dim=1)  # B * 1
         return SE, SE0
 
 
