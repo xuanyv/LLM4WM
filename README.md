@@ -1,5 +1,5 @@
 # LLM4WM: Adapting LLM for Wireless Multi-Tasking
-Liu, Xuanyu, et al. "LLM4WM: Adapting LLM for Wireless Multi-Tasking." arXiv preprint arXiv:2501.12983 (2025). [[paper]](https://arxiv.org/pdf/2501.12983)
+Liu, Xuanyu, et al. "LLM4WM: Adapting LLM for Wireless Multi-Tasking." IEEE Transactions on Machine Learning in Communications and Networking (2025). [[paper]](https://arxiv.org/pdf/2501.12983)
 <br>
 
 <p align="center">
