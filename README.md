@@ -18,7 +18,7 @@ Liu, Xuanyu, et al. "LLM4WM: Adapting LLM for Wireless Multi-Tasking." IEEE Tran
 
   👉 Official announcement & details: [WiFo Discussion #8](https://github.com/liuboxun/WiFo/discussions/8)  
 
-  We warmly welcome everyone to **register, follow the challenge, and ask questions in the discussion forum** — 欢迎大家报名参赛并在讨论区积极交流！🎉
+  We warmly welcome everyone to **register, follow the challenge, and ask questions in the discussion forum** 🎉
 
 
 
