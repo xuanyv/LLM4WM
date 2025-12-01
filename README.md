@@ -6,6 +6,23 @@ Liu, Xuanyu, et al. "LLM4WM: Adapting LLM for Wireless Multi-Tasking." IEEE Tran
 <img src="./pics/network.png" width=95%>
 <p>
 
+## 📰 News
+
+- **SoM Challenge 2025 — WiFo-empowered Wireless Multi-tasking announced!**  
+  Our **PCNI Lab, Peking University** is co-hosting the **SoM Challenge 2025** with **ITU** (sponsored by **Huawei**), focusing on WiFo-empowered wireless multi-task learning at the wireless physical layer.  
+
+  **Key Dates (UTC+8)**  
+  - 🏁 Challenge launch: **Sep 30, 2025**  
+  - 📥 Registration deadline: **Dec 15, 2025, 23:59**  
+  - 🛠 Development phase deadline: **Feb 1, 2026, 23:59**  
+
+  👉 Official announcement & details: [WiFo Discussion #8](https://github.com/liuboxun/WiFo/discussions/8)  
+
+  We warmly welcome everyone to **register, follow the challenge, and ask questions in the discussion forum** — 欢迎大家报名参赛并在讨论区积极交流！🎉
+
+
+
+
 ## Dependencies and Installation
 - Python 3.8 (Recommend to use [Anaconda](https://www.anaconda.com/))
 - Pytorch 2.0.0
