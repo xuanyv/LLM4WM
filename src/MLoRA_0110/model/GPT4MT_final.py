@@ -7,9 +7,9 @@ import numpy as np
 import torch
 import math
 import torch.nn as nn
-from model.modeling_gpt2 import GPT2Model
-from model.modeling_llama import LlamaModel
-from peft import MMOELoraConfig2, get_peft_model
+from src.MLoRA_0110.model.modeling_gpt2 import GPT2Model
+from src.MLoRA_0110.model.modeling_llama import LlamaModel
+from src.MLoRA_0110.peft import MMOELoraConfig2, get_peft_model
 from einops import rearrange
 from peft import LoraConfig
 import time
