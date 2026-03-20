@@ -41,7 +41,7 @@ Training Dataset Link: [[Baidu Cloud]](https://pan.baidu.com/s/1mDKrpBF7pSisrrye
 
 - **Dataset**: Download the dataset and place it under the `data/` folder in the root directory.
 - **GPT-2 Weights**: Download the [GPT-2](https://huggingface.co/openai-community/gpt2) weights and put them into the `pretrain/` folder.
-- **LLM4WM Weights**: Download our provided pretrained weights of LLM4WM([Baidu Cloud](https://pan.baidu.com/s/1EzsCD4GAr63HQDVB2-_XzA?pwd=PCNI) | [Hugging Face](https://huggingface.co/PPASS/LLM4WM/tree/main)) and store them in the `Weights/` folder.
+- **LLM4WM Weights**: Download our provided pretrained weights of LLM4WM( [Baidu Cloud](https://pan.baidu.com/s/1EzsCD4GAr63HQDVB2-_XzA?pwd=PCNI) | [Hugging Face](https://huggingface.co/PPASS/LLM4WM/tree/main)) and store them in the `Weights/` folder.
 
 ### Step 2: Run Inference
 
