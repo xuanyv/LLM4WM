@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 
 from data import Dataset, topk_to_one
 from metrics import Acc_k, NMSELoss
-from model.LLM4WM import LLM4WM
+from src.MLoRA_0110.model.GPT4MT_final import Model as LLM4WM
 
 
 def Compute_loss(output, label, is_train=1):
@@ -111,17 +111,18 @@ if __name__ == "__main__":
                       is_llm_frozen=is_llm_frozen, is_llm_inference=is_llm_inference,
                       is_llm_rand_inital=is_llm_rand_inital,
                       expert_num=expert_num, lora_r=lora_r * expert_num, task_range=task_range).to(device)
-        # Load Test Dataset
-        path1 = './dataset/data_test.mat'
-        test_set = Dataset(path1, is_few=is_few, SNR=SNR)  # creat data for test
-        test_data_loader = DataLoader(dataset=test_set, num_workers=0, batch_size=batch_size, shuffle=True,
-                                      pin_memory=True, drop_last=True)
         # Load Pre-Trained Weights
         if config['pre_trained'] is not None:
             print(f"Loading pre-trained model from {config['pre_trained']}")
             model = torch.load(config['pre_trained'], map_location=device, weights_only=False)
             model.device = device
             setattr(model, 'is_llm_inference', 1)
+
+        # Load Test Dataset
+        path1 = './dataset/data_test.mat'
+        test_set = Dataset(path1, is_few=is_few, SNR=SNR)  # creat data for test
+        test_data_loader = DataLoader(dataset=test_set, num_workers=0, batch_size=batch_size, shuffle=True,
+                                      pin_memory=True, drop_last=True)
 
         total = sum([param.nelement() for param in model.parameters()])
         print("Number of parameter: %.5fM" % (total / 1e6))
